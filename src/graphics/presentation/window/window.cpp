@@ -54,7 +54,7 @@
 
 // IWYU pragma: no_include <intrin.h>
 
-#define KYTY_DBG_INPUT
+// #define KYTY_DBG_INPUT
 
 namespace Libs::Graphics {
 

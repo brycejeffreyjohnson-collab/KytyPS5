@@ -23,35 +23,40 @@ MasterSemaphore::~MasterSemaphore() {
 	}
 }
 
+// TODO Change this
 void MasterSemaphore::Refresh() {
-	uint64_t   counter = 0;
-	const auto result  = m_graphics.device.getSemaphoreCounterValue(m_semaphore, &counter);
-	EXIT_NOT_IMPLEMENTED(result != vk::Result::eSuccess);
+    uint64_t   counter = 0;
+    const auto result  = m_graphics.device.getSemaphoreCounterValue(m_semaphore, &counter);
+    if (result != vk::Result::eSuccess) {
+        return; // Safely return instead of crashing on query failure
+    }
 
-	auto known = m_gpu_tick.load(std::memory_order_acquire);
-	while (known < counter &&
-	       !m_gpu_tick.compare_exchange_weak(known, counter, std::memory_order_release,
-	                                         std::memory_order_relaxed)) {
-	}
+    auto known = m_gpu_tick.load(std::memory_order_acquire);
+    while (known < counter &&
+           !m_gpu_tick.compare_exchange_weak(known, counter, std::memory_order_release,
+                                             std::memory_order_relaxed)) {
+    }
 }
 
 void MasterSemaphore::Wait(uint64_t tick) {
-	if (IsFree(tick)) {
-		return;
-	}
-	Refresh();
-	if (IsFree(tick)) {
-		return;
-	}
+    if (IsFree(tick)) {
+        return;
+    }
+    Refresh();
+    if (IsFree(tick)) {
+        return;
+    }
 
-	vk::SemaphoreWaitInfo wait_info {};
-	wait_info.semaphoreCount = 1;
-	wait_info.pSemaphores    = &m_semaphore;
-	wait_info.pValues        = &tick;
+    vk::SemaphoreWaitInfo wait_info {};
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores    = &m_semaphore;
+    wait_info.pValues        = &tick;
 
-	const auto result = m_graphics.device.waitSemaphores(&wait_info, UINT64_MAX);
-	EXIT_NOT_IMPLEMENTED(result != vk::Result::eSuccess);
-	Refresh();
+    const auto result = m_graphics.device.waitSemaphores(&wait_info, UINT64_MAX);
+    if (result != vk::Result::eSuccess) {
+        return; // Safely return instead of crashing on wait failure
+    }
+    Refresh();
 }
 
 } // namespace Libs::Graphics

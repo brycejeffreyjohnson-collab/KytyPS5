@@ -514,7 +514,7 @@ static bool BuildResourceSpecialization(const ResourcePlan& program, Materialize
 		image.cube      = DescriptorIsCube(descriptor);
 		const auto format =
 		    static_cast<Prospero::BufferFormat>((descriptor.dwords[1] >> 20u) & 0x1ffu);
-		if (base.atomic && format != Prospero::BufferFormat::k32UInt) {
+		if (base.atomic && format != Prospero::BufferFormat::k32UInt && format != Prospero::BufferFormat::k32Float) {
 			return SpecializationFail(
 			    fmt::format("atomic image descriptor {} uses unsupported format {}", i,
 			                static_cast<uint32_t>(format)));
@@ -1115,6 +1115,93 @@ void ApplyResourceSpecialization(Program& program, const ResourceSpecialization&
 	program.info.samplers      = std::move(samplers);
 	program.info.sampled_pairs = std::move(sampled_pairs);
 	program.memory_info        = std::move(memory_info);
+    // const ImageRemap image_remap(specialization);
+
+    // // 1. Define a safe lookup helper to prevent std::vector::_Xrange crashes
+    // auto safe_remap = [&](uint32_t idx) -> uint32_t {
+    //     if (idx >= image_remap.indices.size()) {
+    //         LOGF("Warning: Shader requested out-of-bounds image index %u (Max: %zu)\n", 
+    //              idx, image_remap.indices.size());
+    //         return 0; // Fallback to index 0 to prevent graphics pipeline crash
+    //     }
+    //     return image_remap.indices[idx]; // Safe direct access
+    // };
+
+    // for (auto* block: program.blocks) {
+    //     for (auto it = block->begin(); it != block->end(); ++it) {
+    //         auto& inst = *it;
+    //         const auto image_opcode = ImageOpcodeInfoOf(inst.GetOpcode());
+    //         if (image_opcode.access == ImageAccess::None) {
+    //             continue;
+    //         }
+    //         const auto index = inst.Flags<MemoryFlags>().index;
+    //         EXIT_IF(index >= memory_info.size());
+    //         auto& memory = memory_info[index];
+    //         EXIT_IF(memory.resource >= images.size());
+    //         const auto& image = images[memory.resource];
+    //         if (specialization.images[memory.resource].fmask) {
+    //             EXIT_IF(inst.GetOpcode() != ValueOpcode::ImageRead || memory.data_bits != 32u);
+    //             // Vulkan MSAA stores each sample directly; FMASK's four-bit fragment indices
+    //             // therefore map each coverage sample to the same host sample.
+    //             constexpr uint32_t indices[] = {0x76543210u, 0xfedcba98u};
+    //             std::array<Value, 2> fragments;
+    //             for (uint32_t component = 0; component < fragments.size(); component++) {
+    //                 const auto selected = block->PrependNewInst(
+    //                     it, ValueOpcode::SelectU32, {inst.Arg(2), Value(indices[component]), Value(0u)});
+    //                 fragments[component] = Value(&*selected);
+    //             }
+    //             const auto result = block->PrependNewInst(
+    //                 it, ValueOpcode::CompositeConstructU32x4,
+    //                 {fragments[0], fragments[1], Value(0u), Value(0u)});
+    //             inst.ReplaceUsesWith(Value(&*result));
+    //             continue;
+    //         }
+    //         if (image_opcode.needs_sampler && RequiresPointSampler(image) &&
+    //             memory.sampler < program.info.samplers.size()) {
+    //             EXIT_IF(sampler_plan.point_sampler[memory.sampler] == UINT32_MAX);
+    //             memory.sampler = sampler_plan.point_sampler[memory.sampler];
+    //         }
+    //         EXIT_IF(image.indirect_root == memory.resource &&
+    //                 inst.GetOpcode() != ValueOpcode::ImageSampleRaw);
+    //     }
+    // }
+    
+    // // 2. Replace all .at() calls with our safe_remap helper
+    // for (auto* block: program.blocks) {
+    //     for (auto& inst: *block) {
+    //         if (inst.GetOpcode() == ValueOpcode::GetImageResource) {
+    //             inst.SetFlags(safe_remap(inst.Flags<uint32_t>()));
+    //         }
+    //     }
+    // }
+    // for (auto& memory: memory_info) {
+    //     if (memory.kind == ResourceKind::Image && !memory.planning_only) {
+    //         memory.resource = safe_remap(memory.resource);
+    //     }
+    // }
+    // for (auto& buffer: buffers) {
+    //     if (buffer.image_alias != BufferResource::NoImageAlias) {
+    //         buffer.image_alias = safe_remap(buffer.image_alias);
+    //     }
+    // }
+    // for (auto& pair: sampled_pairs) {
+    //     pair.image = safe_remap(pair.image);
+    // }
+    // for (auto& image: images) {
+    //     if (image.indirect_root != ImageResource::NoIndirectImage) {
+    //         image.indirect_root = safe_remap(image.indirect_root);
+    //     }
+    //     for (auto& resource: image.indirect_resources) {
+    //         resource = safe_remap(resource);
+    //     }
+    // }
+    
+    // image_remap.Apply(images);
+    // program.info.buffers       = std::move(buffers);
+    // program.info.images        = std::move(images);
+    // program.info.samplers      = std::move(samplers);
+    // program.info.sampled_pairs = std::move(sampled_pairs);
+    // program.memory_info        = std::move(memory_info);
 }
 
 } // namespace Libs::Graphics::ShaderRecompiler::IR

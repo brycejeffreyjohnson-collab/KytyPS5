@@ -527,6 +527,20 @@ private:
 	}
 
 	bool GetHandle(Value value, ValueOpcode expected, uint32_t width, uint32_t pc, Inst*& handle,
+	/*
+	The error is: GetBufferResource dword 0 is not a valid runtime value
+	
+	When Ghost of Yōtei tries to use a GetBufferResource with a dynamic index, 
+	ValidateSource returns false because Kyty currently demands all buffer descriptors be statically calculable 
+	(Type::U32 constants) at translation time. The Fail() function then completely aborts the emulator execution.   
+	
+	Creating a Temporary Fallback HackSince a proper fix for dynamic (bindless) buffer tracking requires a major architectural rewrite, 
+	we can write a dirty hack to catch this specific validation failure. If a buffer descriptor dword cannot be statically resolved, 
+	we will just force it to 0u (the first buffer slot) so the compiler survives.Warning: This will allow the emulator to keep running, 
+	but because the shader is now reading from the wrong memory buffer, expect severe graphical corruption, missing geometry, 
+	or GPU hangs in-game.
+	*/
+	// void GetHandle(Value value, ValueOpcode expected, uint32_t width, uint32_t pc, Inst*& handle,
 	               uint32_t& source, bool sampler = false, bool sample_adjust = false) {
 		handle = value.Resolve().TryInstruction();
 		if (handle == nullptr || handle->GetOpcode() != expected) {
@@ -543,6 +557,30 @@ private:
 			}
 			Fail(pc, fmt::format("{} dword {} is not a valid runtime value",
 			                     ValueOpcodeName(expected), bad_dword));
+		// if (expected == ValueOpcode::GetImageResource) {
+		// 	for (; bad_dword < descriptor.dword_count; bad_dword++) {
+		// 		const auto* value = descriptor.dwords[bad_dword].Resolve().TryInstruction();
+		// 		if (value != nullptr && value->GetOpcode() == ValueOpcode::ReadConstBuffer) {
+		// 			Fail(pc, fmt::format("{} dword {} is not a valid runtime value",
+		// 			                     ValueOpcodeName(expected), bad_dword));
+		// 		}
+		// 	}
+		// 	bad_dword = 0;
+		// }
+		
+		// if (!ValidateSource(descriptor, bad_dword)) {
+		// 	if (expected == ValueOpcode::GetBufferResource) {
+		// 		// TEMPORARY HACK: If Ghost of Yotei uses a dynamic bindless buffer, 
+		// 		// force the unresolved dwords to 0 to bypass the compiler crash.
+		// 		LOGF("Warning: Forced dynamic GetBufferResource dword %u to 0 at pc 0x%08x\n", bad_dword, pc);
+		// 		for (uint32_t i = 0; i < descriptor.dword_count; i++) {
+		// 			// We must provide a valid intermediate U32 value
+		// 			descriptor.dwords[i] = Value(0u); 
+		// 		}
+		// 	} else {
+		// 		Fail(pc, fmt::format("{} dword {} is not a valid runtime value",
+		// 		                     ValueOpcodeName(expected), bad_dword));
+		// 	}
 		}
 		source = InternSource(descriptor);
 		return true;

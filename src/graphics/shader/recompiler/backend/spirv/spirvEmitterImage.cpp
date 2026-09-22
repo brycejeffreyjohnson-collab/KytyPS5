@@ -549,6 +549,8 @@ spv::Op ImageAtomicOpcode(IR::ValueOpcode opcode) {
 		case IR::ValueOpcode::ImageAtomicAnd32: return spv::OpAtomicAnd;
 		case IR::ValueOpcode::ImageAtomicOr32: return spv::OpAtomicOr;
 		case IR::ValueOpcode::ImageAtomicXor32: return spv::OpAtomicXor;
+		case IR::ValueOpcode::ImageAtomicFMin32: return spv::OpAtomicFMinEXT;
+		case IR::ValueOpcode::ImageAtomicFMax32: return spv::OpAtomicFMaxEXT;
 		default: return spv::OpNop;
 	}
 }
@@ -873,21 +875,46 @@ void EmitImage(ValueEmitContext& ctx, const IR::Inst& inst) {
 	}
 	const auto atomic_opcode = ImageAtomicOpcode(op);
 	if (atomic_opcode != spv::OpNop) {
+		const bool is_float = (atomic_opcode == spv::OpAtomicFMaxEXT || atomic_opcode == spv::OpAtomicFMinEXT);
+		
+		if (is_float && image.numeric_class != Prospero::TextureNumericClass::Float) {
+			// STUB: Emitting a float atomic on an image compiled as Uint (e.g. from a bindless fallback) 
+			// causes a severe SPIR-V type validation error which leads to a driver crash.
+			ctx.Define(inst, ConstantU32(state, 0));
+			return;
+		}
+		if (!is_float && image.numeric_class != Prospero::TextureNumericClass::Uint) {
+			ctx.Define(inst, ConstantU32(state, 0));
+			return;
+		}
+
+		if (is_float) {
+			state.builder.RequireCapability(spv::CapabilityAtomicFloat32MinMaxEXT);
+			state.builder.RequireExtension("SPV_EXT_shader_atomic_float_min_max");
+		}
 		const auto dimension = image.dimension;
 		ctx.Define(inst, EmitValueOrZeroIfCondition(state, ctx.Arg(inst, 3), [&]() {
+			           const auto base_type = is_float ? TypeF32(state) : TypeU32(state);
 			           const auto pointer      = state.builder.AllocateId();
 			           const auto pointer_type = state.builder.Type(
-			               spv::OpTypePointer, spv::StorageClassImage, TypeU32(state));
+			               spv::OpTypePointer, spv::StorageClassImage, base_type);
 			           state.builder.AddFunction(spv::OpImageTexelPointer, pointer_type, pointer,
 			                                     StorageImageDescriptorPointer(state, mem.resource),
 			                                     CoordU32(ctx, mem, *address, dimension),
 			                                     ConstantU32(state, 0));
+			           auto arg2 = ctx.Arg(inst, 2);
+			           if (is_float) {
+			               arg2 = Unary(state, spv::OpBitcast, TypeF32(state), arg2);
+			           }
 			           const auto old = state.builder.AllocateId();
-			           state.builder.AddFunction(atomic_opcode, TypeU32(state), old, pointer,
+			           state.builder.AddFunction(atomic_opcode, base_type, old, pointer,
 			                                     ConstantU32(state, spv::ScopeDevice),
-			                                     ConstantU32(state, spv::MemorySemanticsMaskNone),
-			                                     ctx.Arg(inst, 2));
+			                                     ConstantU32(state, spv::MemorySemanticsAcquireReleaseMask | spv::MemorySemanticsImageMemoryMask),
+			                                     arg2);
 			           EmitDeviceAtomicMemoryBarrier(state);
+			           if (is_float) {
+			               return Unary(state, spv::OpBitcast, TypeU32(state), old);
+			           }
 			           return old;
 		           }));
 		return;

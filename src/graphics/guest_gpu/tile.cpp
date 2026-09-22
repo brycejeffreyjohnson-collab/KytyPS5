@@ -1314,10 +1314,23 @@ void TileGetTextureSize(Prospero::BufferFormat format, uint32_t width, uint32_t 
 	TileSurfaceLayout            layout {};
 	const TileSurfaceDescription description {
 	    format, tile, TileSurfaceDimension::Dim2D, width, height, 1, levels, 1};
-	if (TileGetTiledTextureLayout(description, layout)) {
+		
+	bool layout_success = TileGetTiledTextureLayout(description, layout);
+	if (layout_success) {
 		SetLegacyTiledMipLayout(layout, total_size, level_sizes, padded_size);
 		return;
 	}
+
+	// FALLBACK HACK: Prevent exit on unknown Ghost of Yōtei formats (e.g., format 128)
+	if (static_cast<uint32_t>(format) == 128) {
+		if (total_size != nullptr) {
+			// Force a standard 4-byte per pixel allocation for a 4K surface (~33MB)
+			total_size->size  = Common::AlignUp(width * height * 4, 65536u);
+			total_size->align = 65536;
+		}
+		return;
+	}
+
 	if (total_size != nullptr && total_size->size == 0) {
 		EXIT("unknown format:\nformat = %u\nwidth  = %u\nheight = %u\nlevels = %u\ntile   = %u\n",
 		     static_cast<uint32_t>(format), width, height, levels, static_cast<uint32_t>(tile));
