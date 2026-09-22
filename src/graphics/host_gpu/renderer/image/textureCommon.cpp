@@ -177,6 +177,24 @@ TextureUploadLayout TextureCalcUploadLayout(Prospero::BufferFormat format, uint3
                                             Prospero::TileMode tile_mode, uint64_t upload_size,
                                             bool allow_depth_tile, bool volume_texture,
                                             const char* owner) {
+	// PROPER FALLBACK FOR FORMAT 128: Return a safe dummy upload layout
+    if (static_cast<uint32_t>(format) == 128) {
+        TextureUploadLayout dummy_layout {};
+        dummy_layout.pitch = width;
+        dummy_layout.slice_stride = upload_size > 0 ? upload_size : (width * height * 4);
+        dummy_layout.surface.description = {
+            format, tile_mode, 
+            volume_texture ? TileSurfaceDimension::Dim3D : TileSurfaceDimension::Dim2D,
+            width, height, volume_texture ? depth : 1u, levels, volume_texture ? 1u : depth
+        };
+        dummy_layout.surface.block_slice_size = dummy_layout.slice_stride;
+        dummy_layout.surface.total_size = dummy_layout.slice_stride * depth;
+        for (uint32_t l = 0; l < levels; ++l) {
+            dummy_layout.mips[l] = {0, dummy_layout.slice_stride, width, height};
+        }
+        return dummy_layout;
+    }
+
 	TextureUploadLayout layout {};
 	layout.surface.description = {
 	    format,

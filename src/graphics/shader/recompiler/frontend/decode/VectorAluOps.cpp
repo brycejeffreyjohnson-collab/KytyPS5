@@ -87,6 +87,7 @@ constexpr OpcodeMap VOP1_OPCODE_LIST[] = {
     {0x00u, Opcode::V_NOP},
     {0x01u, Opcode::V_MOV_B32},
     {0x02u, Opcode::V_READFIRSTLANE_B32},
+    {0x04u, Opcode::V_CVT_F32_I32}, // STUBBED FOR V_CVT_F64_I32
     {0x05u, Opcode::V_CVT_F32_I32},
     {0x06u, Opcode::V_CVT_F32_U32},
     {0x07u, Opcode::V_CVT_U32_F32},
@@ -96,6 +97,7 @@ constexpr OpcodeMap VOP1_OPCODE_LIST[] = {
     {0x0cu, Opcode::V_CVT_RPI_I32_F32},
     {0x0du, Opcode::V_CVT_FLR_I32_F32},
     {0x0eu, Opcode::V_CVT_OFF_F32_I4},
+	{0x0fu, Opcode::V_CVT_OFF_F32_I4}, // STUBBED FOR V_CVT_F32_F64
     {0x11u, Opcode::V_CVT_F32_UBYTE0},
     {0x12u, Opcode::V_CVT_F32_UBYTE1},
     {0x13u, Opcode::V_CVT_F32_UBYTE2},
@@ -110,6 +112,7 @@ constexpr OpcodeMap VOP1_OPCODE_LIST[] = {
     {0x27u, Opcode::V_LOG_F32},
     {0x2bu, Opcode::V_RCP_IFLAG_F32},
     {0x2eu, Opcode::V_RSQ_F32},
+    {0x2fu, Opcode::V_RCP_F32}, // STUBBED FOR V_RCP_F64
     {0x33u, Opcode::V_SQRT_F32},
     {0x35u, Opcode::V_SIN_F32},
     {0x36u, Opcode::V_COS_F32},
@@ -146,6 +149,7 @@ constexpr OpcodeMap VOP3_ENCODED_VOP1_OPCODE_LIST[] = {
     {0x00u, Opcode::V_NOP},
     {0x01u, Opcode::V_MOV_B32},
     {0x02u, Opcode::V_READFIRSTLANE_B32},
+	{0x04u, Opcode::V_CVT_F32_I32}, // STUBBED FOR V_CVT_F64_I32
     {0x05u, Opcode::V_CVT_F32_I32},
     {0x06u, Opcode::V_CVT_F32_U32},
     {0x07u, Opcode::V_CVT_U32_F32},
@@ -164,6 +168,7 @@ constexpr OpcodeMap VOP3_ENCODED_VOP1_OPCODE_LIST[] = {
     {0x27u, Opcode::V_LOG_F32},
     {0x2bu, Opcode::V_RCP_IFLAG_F32},
     {0x2eu, Opcode::V_RSQ_F32},
+    {0x2fu, Opcode::V_RCP_F32}, // STUBBED FOR V_RCP_F64
     {0x33u, Opcode::V_SQRT_F32},
     {0x35u, Opcode::V_SIN_F32},
     {0x36u, Opcode::V_COS_F32},
@@ -244,6 +249,7 @@ constexpr VopcOpcodeInfo VOPC_OPCODE_LIST[] = {
     {0xe2u, Opcode::V_CMP_EQ_U64, false},  {0xe4u, Opcode::V_CMP_GT_U64, false},
     {0xe5u, Opcode::V_CMP_NE_U64, false},
     {0xf5u, Opcode::V_CMPX_NE_U64, false}, {0xc9u, Opcode::V_CMP_LT_F16},
+    {0xfcu, Opcode::V_CMPX_NE_U64}, // UNKNOWN STUBBED
     {0xcau, Opcode::V_CMP_EQ_F16},         {0xcbu, Opcode::V_CMP_LE_F16},
     {0xccu, Opcode::V_CMP_GT_F16},         {0xcdu, Opcode::V_CMP_LG_F16},
     {0xceu, Opcode::V_CMP_GE_F16},         {0xebu, Opcode::V_CMP_NGT_F16},
@@ -266,6 +272,7 @@ constexpr OpcodeMap VOP3_OPCODE_LIST[] = {
     {0x146u, Opcode::V_CUBETC_F32},
     {0x147u, Opcode::V_CUBEMA_F32},
     {0x14bu, Opcode::V_FMA_F32},
+    {0x14cu, Opcode::V_FMA_F32}, // STUBBED FOR V_FMA_F64
     {0x148u, Opcode::V_BFE_U32},
     {0x149u, Opcode::V_BFE_I32},
     {0x14au, Opcode::V_BFI_B32},
@@ -273,6 +280,7 @@ constexpr OpcodeMap VOP3_OPCODE_LIST[] = {
     {0x151u, Opcode::V_MIN3_F32},
     {0x152u, Opcode::V_MIN3_I32},
     {0x153u, Opcode::V_MIN3_U32},
+    {0x165u, Opcode::V_MUL_F32}, // STUBBED FOR V_MUL_F64
     {0x351u, Opcode::V_MIN3_F16},
     {0x154u, Opcode::V_MAX3_F32},
     {0x155u, Opcode::V_MAX3_I32},

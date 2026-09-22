@@ -566,6 +566,15 @@ static vk::Device VulkanCreateDevice(GraphicContext& graphics,
 		provoking_vertex.pNext = supported_features2.pNext;
 		supported_features2.pNext = &provoking_vertex;
 	}
+	const bool atomic_float_extension =
+	    HasExtension(device_extensions, "VK_EXT_shader_atomic_float2");
+	vk::PhysicalDeviceShaderAtomicFloatFeaturesEXT supported_atomic_float1 {};
+	vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT supported_atomic_float {};
+	if (atomic_float_extension) {
+		supported_atomic_float.pNext = supported_features2.pNext;
+		supported_atomic_float1.pNext = &supported_atomic_float;
+		supported_features2.pNext = &supported_atomic_float1;
+	}
 	physical_device.getFeatures2(&supported_features2);
 	graphics.mesh_shader_enabled = mesh_extension && supported_mesh.meshShader;
 
@@ -682,6 +691,11 @@ static vk::Device VulkanCreateDevice(GraphicContext& graphics,
 		provoking_vertex.pNext = const_cast<void*>(create_info.pNext);
 		provoking_vertex.transformFeedbackPreservesProvokingVertex = VK_FALSE;
 		create_info.pNext = &provoking_vertex;
+	}
+	if (atomic_float_extension && supported_atomic_float.shaderImageFloat32AtomicMinMax) {
+		supported_atomic_float.pNext = const_cast<void*>(create_info.pNext);
+		supported_atomic_float1.pNext = &supported_atomic_float;
+		create_info.pNext = &supported_atomic_float1;
 	}
 	create_info.pQueueCreateInfos       = &queue_create_info;
 	create_info.queueCreateInfoCount    = 1;
@@ -1059,7 +1073,9 @@ void WindowContext::CreateVulkan() {
 		for (const auto* extension: {VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
 		                             VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME,
 		                             VK_EXT_MESH_SHADER_EXTENSION_NAME,
-		                             VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME}) {
+		                             VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
+		                             "VK_EXT_shader_atomic_float",
+		                             "VK_EXT_shader_atomic_float2"}) {
 			if (HasExtension(available_extensions, extension)) {
 				device_extensions.push_back(extension);
 			}

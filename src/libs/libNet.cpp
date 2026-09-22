@@ -609,6 +609,20 @@ static int KYTY_SYSV_ABI HttpUriBuild(char* out, size_t* require, size_t prepare
 	return 0;
 }
 
+static int KYTY_SYSV_ABI HttpsLoadCert(int libhttpCtxId, int caCertNum, const void** caList, const void* cert, const void* privKey) {
+	PRINT_NAME();
+
+	LOGF("\t libhttpCtxId = %d\n"
+	     "\t caCertNum    = %d\n"
+	     "\t caList       = 0x%016" PRIx64 "\n"
+	     "\t cert         = 0x%016" PRIx64 "\n"
+	     "\t privKey      = 0x%016" PRIx64 "\n",
+	     libhttpCtxId, caCertNum, reinterpret_cast<uint64_t>(caList),
+	     reinterpret_cast<uint64_t>(cert), reinterpret_cast<uint64_t>(privKey));
+
+	return 0;
+}
+
 LIB_DEFINE(InitNet_1_Http) {
 	LIB_FUNC("A9cVMUtEp4Y", Http::HttpInit);
 	LIB_FUNC("Ik-KpLTlf7Q", Http::HttpTerm);
@@ -645,6 +659,7 @@ LIB_DEFINE(InitNet_1_Http) {
 	LIB_FUNC("yigr4V0-HTM", Http::HttpSetRecvTimeOut);
 	LIB_FUNC("T-mGo9f3Pu4", Http::HttpSetAutoRedirect);
 	LIB_FUNC("qFg2SuyTJJY", Http::HttpSetAuthEnabled);
+	LIB_FUNC("DK+GoXCNT04", LibHttp::HttpsLoadCert);
 	LIB_FUNC("IWalAn-guFs", LibHttp::HttpUriParse);
 	LIB_FUNC("YuOW3dDAKYc", LibHttp::HttpUriEscape);
 	LIB_FUNC("5LZA+KPISVA", LibHttp::HttpUriBuild);
@@ -1413,6 +1428,7 @@ constexpr int COMMERCE_ERROR_NOT_INITIALIZED     = static_cast<int>(0x80B80003u)
 constexpr int COMMERCE_ERROR_ALREADY_INITIALIZED = static_cast<int>(0x80B80004u);
 
 static int g_commerce_status = COMMERCE_STATUS_NONE;
+static int g_commerce_layout = 0;
 
 static int KYTY_SYSV_ABI NpCommerceDialogInitialize() {
 	PRINT_NAME();
@@ -1438,10 +1454,58 @@ static int KYTY_SYSV_ABI NpCommerceDialogUpdateStatus() {
 	return g_commerce_status;
 }
 
+static int KYTY_SYSV_ABI NpCommerceSetPsStoreIconLayout(int layout) {
+	PRINT_NAME();
+	if (g_commerce_status == COMMERCE_STATUS_NONE) {
+		return COMMERCE_ERROR_NOT_INITIALIZED;
+	}
+	
+	if (layout < 0 || layout > 2) {
+		return OK;
+	}
+	g_commerce_layout = layout;
+
+	return OK;
+}
+
+static int KYTY_SYSV_ABI NpCommerceShowPsStoreIcon(int pos) {
+ 	PRINT_NAME();
+	if (g_commerce_status == COMMERCE_STATUS_NONE) {
+		return COMMERCE_ERROR_NOT_INITIALIZED;
+	}
+	
+	if (pos < 0 || pos > 2) {
+        return OK;
+    }
+	return OK;
+}
+
+static int KYTY_SYSV_ABI NpCommerceHidePsStoreIcon() {
+ 	PRINT_NAME();
+	if (g_commerce_status == COMMERCE_STATUS_NONE) {
+		return COMMERCE_ERROR_NOT_INITIALIZED;
+	}
+
+	return OK;
+}
+
+static int KYTY_SYSV_ABI NpCommerceDialogOpen() {
+ 	PRINT_NAME();
+	if (g_commerce_status == COMMERCE_STATUS_NONE) {
+		return COMMERCE_ERROR_NOT_INITIALIZED;
+	}
+
+	return OK;
+}
+
 LIB_DEFINE(InitNet_1_NpCommerce) {
 	LIB_FUNC("0aR2aWmQal4", NpCommerceDialogInitialize);
 	LIB_FUNC("m-I92Ab50W8", NpCommerceDialogTerminate);
 	LIB_FUNC("LR5cwFMMCVE", NpCommerceDialogUpdateStatus);
+	LIB_FUNC("uKTDW8hk-ts", NpCommerceSetPsStoreIconLayout);
+	LIB_FUNC("DHmwsa6S8Tc", NpCommerceShowPsStoreIcon);
+	LIB_FUNC("dsqCVsNM0Zg", NpCommerceHidePsStoreIcon);
+	LIB_FUNC("DfSCDRA3EjY", NpCommerceDialogOpen);
 }
 
 } // namespace LibNpCommerce
@@ -1495,8 +1559,20 @@ static int KYTY_SYSV_ABI NpSessionSignalingInitialize(void* param) {
 	return 0;
 }
 
+static int KYTY_SYSV_ABI NpSessionSignalingCreateContext2() {
+	PRINT_NAME();
+	return 0;
+}
+
+static int KYTY_SYSV_ABI NpSessionSignalingRequestPrepare() {
+	PRINT_NAME();
+	return 0;
+}
+
 LIB_DEFINE(InitNet_1_NpSessionSignaling) {
 	LIB_FUNC("ysmw6J-P8Ak", NpSessionSignalingInitialize);
+	LIB_FUNC("aBuX0PX-T7I", NpSessionSignalingCreateContext2);
+	LIB_FUNC("r8mVMwlafF8", NpSessionSignalingRequestPrepare);
 }
 
 } // namespace LibNpSessionSignaling
@@ -1532,6 +1608,11 @@ static constexpr NpEntitlementAccessAddcontEntitlementInfo NP_ENTITLEMENT_ACCESS
     {{{"85y-je"}, {}}, 3, 4}, // GTA V hash 0xf4315381
     {{{"5d5c48"}, {}}, 3, 4}, // GTA V hash 0x961c34b0
     {{{"_mtqu6"}, {}}, 3, 4}, // GTA V hash 0x9cd1bcad
+
+	{{{"GHOST2APP0000000"}, {}}, 3, 4},
+	{{{"GHOSTYOTEIDUPLEX"}, {}}, 3, 4},
+	{{{"GHOST2DISC000000"}, {}}, 3, 4}, 
+	{{{"GHOST2BASEME0000"}, {}}, 3, 4},
 };
 
 static int KYTY_SYSV_ABI NpEntitlementAccessInitialize(
@@ -1595,6 +1676,9 @@ static int KYTY_SYSV_ABI NpEntitlementAccessGetAddcontEntitlementInfo(
 	LOGF("\t service_label     = %" PRIu32 "\n", service_label);
 	LOGF("\t entitlement_label = 0x%016" PRIx64 "\n",
 	     reinterpret_cast<uint64_t>(entitlement_label));
+	LOGF("\t entitlement_label(s) = 0x%016" PRIx64 " ('%.17s')\n",
+         reinterpret_cast<uint64_t>(entitlement_label),
+         entitlement_label->data);
 	LOGF("\t info              = 0x%016" PRIx64 "\n", reinterpret_cast<uint64_t>(info));
 
 	if (entitlement_label == nullptr || info == nullptr) {
@@ -1611,7 +1695,8 @@ static int KYTY_SYSV_ABI NpEntitlementAccessGetAddcontEntitlementInfo(
 		}
 	}
 
-	return NP_ENTITLEMENT_ACCESS_ERROR_NO_ENTITLEMENT;
+	// Return always entitled
+	return 0;
 }
 
 LIB_DEFINE(InitNet_1_NpEntitlementAccess) {

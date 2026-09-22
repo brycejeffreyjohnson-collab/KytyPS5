@@ -1,0 +1,21 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Release" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="_build/windows/install/kyty_emulator.exe">
+    <Properties Name="DebuggerProjectSystem">
+      <Property Name="Arguments" Value="--amd-cpu --game &quot;G:\PS5 Emulator\Games\[DLPSGAME.COM]-Ghost of Yotei 01.008 PPSA26344&quot;" />
+      <Property Name="AttachLaunchAction" Value="No" />
+      <Property Name="Environment" Value="Default" />
+      <Property Name="Executable" Value="g:\ps5 emulator\kytyps5\_build\windows\install\kyty_emulator.exe" />
+      <Property Name="IORedirection" Value="Auto" />
+      <Property Name="LaunchingEngine" Value="00000000-0000-0000-0000-000000000000" />
+      <Property Name="LaunchSQLEngine" Value="No" />
+      <Property Name="PortSupplier" Value="00000000-0000-0000-0000-000000000000" />
+      <Property Name="RemoteMachine" Value="BRYCE-GAMING" />
+      <Property Name="StartingDirectory" Value="G:\PS5 Emulator\KytyPS5" />
+      <Property Name="UseLegacyDebugEngines" Value="No" />
+    </Properties>
+  </Project>
+</Solution>

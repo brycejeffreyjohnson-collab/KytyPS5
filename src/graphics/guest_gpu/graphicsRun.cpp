@@ -906,6 +906,9 @@ void CommandProcessor::DrawIndirect(uint32_t data_offset, uint32_t draw_initiato
 	EXIT_NOT_IMPLEMENTED((draw_initiator & ~0x20u) != 2u);
 	EXIT_NOT_IMPLEMENTED(m_draw_indirect_args_base_addr == 0);
 
+	// Sync GPU before reading draw arguments
+	BufferFlushAndWait();
+
 	const auto* args_addr =
 	    reinterpret_cast<const void*>(m_draw_indirect_args_base_addr + data_offset);
 
@@ -983,6 +986,9 @@ void CommandProcessor::DrawIndirectMulti(uint32_t data_offset, uint32_t max_coun
                                          bool indexed) {
 	EXIT_NOT_IMPLEMENTED((draw_initiator & ~0x20u) != 2u);
 	EXIT_NOT_IMPLEMENTED(m_draw_indirect_args_base_addr == 0);
+
+	// Sync GPU before reading draw count and arguments
+	BufferFlushAndWait();
 
 	uint32_t draw_count = max_count_or_count;
 	if (count_addr != nullptr) {
@@ -1141,6 +1147,10 @@ void CommandProcessor::DispatchIndirect(uint32_t data_offset, uint32_t mode) {
 	};
 
 	EXIT_NOT_IMPLEMENTED(m_dispatch_indirect_args_base_addr == 0);
+
+	// PROPER FIX: Flush pending commands to the GPU and wait for them to finish
+	// so the Compute Shader has time to write the arguments to this memory address.
+	BufferFlushAndWait();
 
 	const auto args_addr = m_dispatch_indirect_args_base_addr + data_offset;
 	auto*      args      = reinterpret_cast<const DispatchIndirectArgs*>(args_addr);
