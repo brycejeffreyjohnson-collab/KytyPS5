@@ -986,6 +986,24 @@ uint32_t EmitAtomic32(ValueEmitContext& ctx, const IR::Inst& inst) {
 	});
 }
 
+uint32_t EmitAtomic64(ValueEmitContext& ctx, const IR::Inst& inst) {
+    const auto& mem = ctx.Memory(inst);
+    return EmitAtomicAccess(ctx, inst, mem, [&](uint32_t pointer) {
+        const auto scope =
+            mem.kind == IR::ResourceKind::Lds ? spv::ScopeWorkgroup : spv::ScopeDevice;
+        const auto old = EmitAtomicOperation(ctx, inst, pointer, scope);
+        if (mem.kind == IR::ResourceKind::Lds) {
+            const auto semantics =
+                spv::MemorySemanticsAcquireReleaseMask | spv::MemorySemanticsWorkgroupMemoryMask;
+            ctx.state.builder.AddFunction(spv::OpMemoryBarrier, ConstantU32(ctx.state, scope),
+                                          ConstantU32(ctx.state, semantics));
+        } else {
+            EmitDeviceAtomicMemoryBarrier(ctx.state);
+        }
+        return old;
+    });
+}
+
 uint32_t EmitBufferAtomic64(ValueEmitContext& ctx, const IR::Inst& inst) {
 	const auto& mem   = ctx.Memory(inst);
 	auto&       state = ctx.state;

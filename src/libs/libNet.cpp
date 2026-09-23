@@ -1451,7 +1451,7 @@ static int KYTY_SYSV_ABI NpCommerceDialogTerminate() {
 static int KYTY_SYSV_ABI NpCommerceDialogUpdateStatus() {
 	PRINT_NAME();
 
-	return g_commerce_status;
+	return OK;
 }
 
 static int KYTY_SYSV_ABI NpCommerceSetPsStoreIconLayout(int layout) {

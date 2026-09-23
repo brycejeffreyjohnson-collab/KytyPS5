@@ -322,7 +322,7 @@ bool InstallHandler(Handler handler) {
 	struct sigaction action {};
 	action.sa_sigaction = SignalHandler;
 	sigemptyset(&action.sa_mask);
-	action.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
+	action.sa_flags = SA_SIGINFO | SA_RESTART;
 
 	for (const int signal_number: {SIGSEGV, SIGBUS, SIGILL}) {
 		if (::sigaction(signal_number, &action, nullptr) != 0) {

@@ -627,6 +627,7 @@ ShaderProgram PipelineCache::GetComputeProgram(const HW::ComputeShaderInfo& regs
                                                const HW::ShaderRegisters&   sh,
                                                ShaderComputeInputInfo&      input_info) {
 	input_info.host_subgroup_size = m_graphics.SupportsComputeWave64() ? 64u : 32u;
+	// input_info.needs_lds_barriers = !m_graphics.compute_wave64_supported;
 	const auto        params      = PrepareProgram(regs, sh, input_info);
 	Common::LockGuard lock(m_mutex);
 	uint32_t          push_data_cursor = 0;

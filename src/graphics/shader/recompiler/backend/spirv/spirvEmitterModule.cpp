@@ -47,6 +47,16 @@ uint32_t TypeF32(EmitterState& state) {
 	return state.builder.Type(spv::OpTypeFloat, 32);
 }
 
+uint32_t TypeF64(EmitterState& state) {
+    return state.builder.Type(spv::OpTypeFloat, 64);
+}
+
+uint32_t ConstantF64(EmitterState& state, uint64_t value) {
+    return state.builder.Constant(spv::OpConstant, TypeF64(state), 
+                                  static_cast<uint32_t>(value), 
+                                  static_cast<uint32_t>(value >> 32));
+}
+
 uint32_t TypeU32Vector(EmitterState& state, uint32_t components) {
 	return state.builder.Type(spv::OpTypeVector, TypeU32(state), components);
 }

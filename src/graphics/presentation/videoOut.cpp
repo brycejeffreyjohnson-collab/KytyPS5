@@ -1463,6 +1463,32 @@ KYTY_SYSV_ABI int VideoOutSubmitFlip(int handle, int index, int flip_mode, int64
 	return OK;
 }
 
+struct VideoOutVrrStatus {
+	std::array<uint8_t, 0x80> data;
+};
+
+static_assert(sizeof(VideoOutVrrStatus) == 0x80);
+
+KYTY_SYSV_ABI int VideoOutVrrStatusInitialize() {
+	PRINT_NAME();
+	return OK;
+}
+
+KYTY_SYSV_ABI int VideoOutGetVrrStatus(int handle, VideoOutVrrStatus* status) {
+	PRINT_NAME();
+
+	if (status == nullptr) {
+		return VIDEO_OUT_ERROR_INVALID_ADDRESS;
+	}
+
+	// Kyty currently presents at a fixed refresh rate. A zeroed status reports
+	// that no VRR range or active VRR mode is available, while initializing the
+	// complete ABI output rather than leaving guest stack bytes undefined.
+	(void)handle;
+	*status = {};
+	return OK;
+}
+
 int VideoOutDriver::SubmitFlipFromGpu(Graphics::CommandBuffer& buffer, int handle, int index,
                                       int flip_mode, int64_t flip_arg, uint64_t& request_id) {
 	EXIT_IF(buffer.IsInvalid());

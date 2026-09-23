@@ -377,6 +377,7 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, uint64_t vaddr, uint64_t siz
 		command.EndRendering();
 		const auto native = command.Handle();
 		vk::BufferMemoryBarrier before {};
+		// before.sType         = vk::StructureType::eBufferMemoryBarrier;
 		before.srcAccessMask = vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite |
 		                       vk::AccessFlagBits::eTransferRead |
 		                       vk::AccessFlagBits::eTransferWrite;

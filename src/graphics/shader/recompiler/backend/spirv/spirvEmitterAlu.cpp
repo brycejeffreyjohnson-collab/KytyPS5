@@ -296,6 +296,114 @@ uint32_t EmitConvertF32S32(EmitterState& state, uint32_t arg0) {
 	return EmitNative<spv::OpConvertSToF, IR::Type::F32>(state, signed_value);
 }
 
+uint32_t EmitConvertF64S32(EmitterState& state, uint32_t arg0) {
+    const auto signed_value = Unary(state, spv::OpBitcast, TypeI32(state), arg0);
+    return EmitNative<spv::OpConvertSToF, IR::Type::F64>(state, signed_value);
+}
+
+uint32_t EmitFPRecip64(EmitterState& state, uint32_t arg0) {
+    return Binary(state, spv::OpFDiv, TypeF64(state), ConstantF64(state, 0x3ff0000000000000ull), arg0);
+}
+
+DppTargetLane EmitDpp8TargetLane(EmitterState& state, const IR::Dpp8MoveFlags& flags) {
+    // Fetch the thread ID using Kyty's internal getter
+    const auto subid = EmitSubgroupLocalInvocationId(state);
+    
+    // Utilize Kyty's existing permutation math for DPP8 (shift by 3u)
+    return EmitDppPermTargetLane(state, subid, flags.lane_selectors, 3u);
+}
+
+uint32_t EmitDpp8MoveU32(ValueEmitContext& ctx, const IR::Inst& inst) {
+    auto&      state  = ctx.state;
+    const auto flags  = inst.Flags<IR::Dpp8MoveFlags>();
+    
+    // Use our new proper target lane helper
+    const auto target = EmitDpp8TargetLane(state, flags);
+    const auto shuffled = ctx.Shuffle(inst, 0, target.lane);
+    
+    if (flags.fetch_inactive) {
+        return shuffled;
+    }
+    
+    const auto ballot        = ctx.Ballot(inst.Arg(1));
+    const auto source_active = EmitBallotLaneActiveBool(state, ballot, target.lane);
+    
+    const auto can_fetch = state.builder.AllocateId();
+    state.builder.AddFunction(spv::OpLogicalAnd, TypeBool(state), can_fetch, target.valid,
+                              source_active);
+                              
+    return EmitNative<spv::OpSelect, IR::Type::U32>(state, can_fetch, shuffled,
+                                                    ConstantU32(state, 0));
+}
+
+uint32_t EmitDpp8UpdateU32(ValueEmitContext& ctx, const IR::Inst& inst) {
+    auto&      state  = ctx.state;
+    const auto flags  = inst.Flags<IR::Dpp8MoveFlags>();
+    
+    // Target lane logic remains identical to the Move variant
+    const auto target = EmitDpp8TargetLane(state, flags);
+    
+    // In an 'Update' instruction, Arg(1) is the data being shuffled
+    const auto shuffled = ctx.Shuffle(inst, 1, target.lane);
+    
+    if (flags.fetch_inactive) {
+        return shuffled;
+    }
+    
+    // Arg(2) holds the ballot mask
+    const auto ballot        = ctx.Ballot(inst.Arg(2));
+    const auto source_active = EmitBallotLaneActiveBool(state, ballot, target.lane);
+    
+	const auto can_fetch = state.builder.AllocateId();
+    state.builder.AddFunction(spv::OpLogicalAnd, TypeBool(state), can_fetch, target.valid,
+                              source_active);
+    
+    const uint32_t original_value = ctx.Def(inst.Arg(0));
+                              
+    return EmitNative<spv::OpSelect, IR::Type::U32>(state, can_fetch, shuffled,
+                                                    original_value);
+}
+
+uint32_t EmitWqmMask(EmitterState& state, uint32_t arg0) {
+    // We use ScopeSubgroup as the safe execution scope for WQM behavior
+    const uint32_t scope_subgroup = ConstantU32(state, static_cast<uint32_t>(spv::ScopeSubgroup));
+    
+    const auto result = state.builder.AllocateId();
+    
+    // If 'arg0' is true for ANY thread in the subgroup, it forces them all true.
+    state.builder.AddFunction(spv::OpGroupNonUniformAny, TypeBool(state), result, scope_subgroup, arg0);
+    
+    return result;
+}
+
+uint32_t EmitReadBoundedSrtU32(EmitterState& state, uint32_t arg0) {
+    // 1. BOUNDS CHECKING
+    const uint32_t max_bounds = ConstantU32(state, 255);
+    
+    const uint32_t is_in_bounds = state.builder.AllocateId();
+    state.builder.AddFunction(spv::OpULessThan, TypeBool(state), is_in_bounds, arg0, max_bounds);
+    
+    const uint32_t clamped_index = state.builder.AllocateId();
+    state.builder.AddFunction(spv::OpSelect, TypeU32(state), clamped_index, is_in_bounds, arg0, max_bounds);
+
+    // 2. FETCH THE SRT BASE POINTER
+    // Using Kyty's exact internal variable for the Shader Resource Table push constant
+    const uint32_t srt_pointer = state.flattened_srt_variable; //[cite: 1]
+
+    // 3. EXECUTE THE MEMORY READ
+    const uint32_t access_chain = state.builder.AllocateId();
+    
+    // Using Kyty's universal Type() function to define the Uniform pointer
+    const uint32_t ptr_type = state.builder.Type(spv::OpTypePointer, static_cast<uint32_t>(spv::StorageClassUniform), TypeU32(state));
+    
+    state.builder.AddFunction(spv::OpAccessChain, ptr_type, access_chain, srt_pointer, clamped_index);
+    
+    const uint32_t result = state.builder.AllocateId();
+    state.builder.AddFunction(spv::OpLoad, TypeU32(state), result, access_chain);
+    
+    return result;
+}
+
 uint32_t EmitCompositeExtractU64(EmitterState& state, uint32_t arg0, IR::Value arg1) {
 	return EmitNative<spv::OpCompositeExtract, IR::Type::U32>(state, arg0, arg1.U32());
 }

@@ -138,6 +138,8 @@ uint32_t TypeU32Pair(EmitterState& state);
 uint32_t TypeI32(EmitterState& state);
 uint32_t TypeI32Pair(EmitterState& state);
 uint32_t TypeF32(EmitterState& state);
+uint32_t TypeF64(EmitterState& state);
+uint32_t ConstantF64(EmitterState& state, uint64_t value);
 uint32_t TypeU32Vector(EmitterState& state, uint32_t components);
 
 uint32_t TypeU32Composite(EmitterState& state, uint32_t components);
@@ -470,6 +472,10 @@ uint32_t EmitTrigCycleF32(EmitterState& state, uint32_t src, bool preserve_signe
 inline constexpr auto EmitFNegateValue = EmitNative<spv::OpFNegate, IR::Type::F32, uint32_t>;
 
 inline constexpr auto EmitFAbsValue = EmitGlsl<GLSLstd450FAbs, IR::Type::F32, uint32_t>;
+
+inline constexpr auto EmitFPAbs64Value = EmitGlsl<GLSLstd450FAbs, IR::Type::F64, uint32_t>;
+
+inline constexpr auto EmitFPFma64Value = EmitGlsl<GLSLstd450Fma, IR::Type::F64, uint32_t, uint32_t, uint32_t>;
 
 uint32_t EmitF16BitsToF32(EmitterState& state, uint32_t bits);
 

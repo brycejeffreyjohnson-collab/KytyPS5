@@ -153,7 +153,7 @@ U32 IREmitter::CompositeExtract(Value composite, uint32_t index) {
 		case Type::U32x2: opcode = ValueOpcode::CompositeExtractU32x2; break;
 		case Type::U32x3: opcode = ValueOpcode::CompositeExtractU32x3; break;
 		case Type::U32x4: opcode = ValueOpcode::CompositeExtractU32x4; break;
-		default: EXIT("invalid U32 composite type\n");
+		default: EXIT("invalid U32 composite type: %d\n", static_cast<int>(composite.GetType()));
 	}
 	return U32(Emit(opcode, {composite, Value(index)}));
 }

@@ -20,11 +20,20 @@ inline constexpr auto EmitConvertF32F16 = EmitF16BitsToF32;
 uint32_t              EmitConvertS32F32(EmitterState& state, uint32_t arg0);
 uint32_t              EmitConvertU32F32(EmitterState& state, uint32_t arg0);
 uint32_t              EmitConvertF32S32(EmitterState& state, uint32_t arg0);
+uint32_t              EmitConvertF64S32(EmitterState& state, uint32_t arg0);
+uint32_t              EmitFPRecip64(EmitterState& state, uint32_t arg0);
+uint32_t EmitDpp8MoveU32(ValueEmitContext& ctx, const IR::Inst& inst);
+uint32_t EmitDpp8UpdateU32(ValueEmitContext& ctx, const IR::Inst& inst);
+uint32_t EmitWqmMask(EmitterState& state, uint32_t arg0);
+EMIT_NATIVE(ConvertF64U32, OpConvertUToF, F64, uint32_t)
+EMIT_NATIVE(ConvertF32F64, OpFConvert, F32, uint32_t)
 EMIT_NATIVE(ConvertF32U32, OpConvertUToF, F32, uint32_t)
 EMIT_NATIVE(CompositeConstructU64, OpCompositeConstruct, U64, uint32_t, uint32_t)
+EMIT_NATIVE(CompositeConstructF64, OpCompositeConstruct, F64, uint32_t, uint32_t)
 EMIT_NATIVE(CompositeConstructU32x2, OpCompositeConstruct, U32x2, uint32_t, uint32_t)
 EMIT_NATIVE(CompositeConstructU32x3, OpCompositeConstruct, U32x3, uint32_t, uint32_t, uint32_t)
 EMIT_NATIVE(CompositeConstructF32x2, OpCompositeConstruct, F32x2, uint32_t, uint32_t)
+EMIT_NATIVE(CompositeExtractF64, OpCompositeExtract, U32, uint32_t, uint32_t)
 EMIT_NATIVE(CompositeConstructU32x4, OpCompositeConstruct, U32x4, uint32_t, uint32_t, uint32_t,
             uint32_t)
 uint32_t              EmitCompositeExtractU64(EmitterState& state, uint32_t arg0, IR::Value arg1);
@@ -38,7 +47,11 @@ inline constexpr auto EmitPackUnorm2x16 =
     EmitGlsl<GLSLstd450PackUnorm2x16, IR::Type::U32, uint32_t>;
 uint32_t              EmitPackFloat2x16Rtz(EmitterState& state, uint32_t arg0, uint32_t arg1);
 inline constexpr auto EmitFPAbs32 = EmitFAbsValue;
+inline constexpr auto EmitFPAbs64 = EmitFPAbs64Value;
 inline constexpr auto EmitFPNeg32 = EmitFNegateValue;
+inline constexpr auto EmitFPFma64 = EmitFPFma64Value;
+EMIT_NATIVE(FPNeg64, OpFNegate, F64, uint32_t)
+EMIT_NATIVE(FPMul64, OpFMul, F64, uint32_t, uint32_t)
 uint32_t              EmitFPSaturate32(EmitterState& state, uint32_t arg0);
 EMIT_NATIVE(BitFieldInsert, OpBitFieldInsert, U32, uint32_t, uint32_t, uint32_t, uint32_t)
 EMIT_NATIVE(BitFieldUExtract, OpBitFieldUExtract, U32, uint32_t, uint32_t, uint32_t)
@@ -177,6 +190,7 @@ uint32_t              EmitGetAttribute(ValueEmitContext& ctx, const IR::Inst& in
 uint32_t              EmitGetInterpolationParameter(ValueEmitContext& ctx, const IR::Inst& inst);
 void                  EmitSetAttribute(ValueEmitContext& ctx, const IR::Inst& inst);
 uint32_t              EmitGetShaderBase(ValueEmitContext& ctx);
+uint32_t              EmitReadBoundedSrtU32(EmitterState& state, uint32_t arg0);
 inline constexpr auto EmitGetSrtResource     = EmitVoid;
 inline constexpr auto EmitGetBufferResource  = EmitGetSrtResource;
 inline constexpr auto EmitGetAddressResource = EmitGetSrtResource;
@@ -187,6 +201,7 @@ inline constexpr auto EmitMakeImageAddress   = EmitGetSrtResource;
 void                  EmitLoadMemory(ValueEmitContext& ctx, const IR::Inst& inst);
 void                  EmitStoreMemory(ValueEmitContext& ctx, const IR::Inst& inst);
 uint32_t              EmitAtomic32(ValueEmitContext& ctx, const IR::Inst& inst);
+uint32_t              EmitAtomic64(ValueEmitContext& ctx, const IR::Inst& inst);
 uint32_t              EmitBufferAtomic64(ValueEmitContext& ctx, const IR::Inst& inst);
 uint32_t              EmitBufferFloatAtomic(ValueEmitContext& ctx, const IR::Inst& inst);
 void                  EmitSharedFloatAtomic(ValueEmitContext& ctx, const IR::Inst& inst);
@@ -254,6 +269,8 @@ inline constexpr auto EmitSharedAtomicUMax32    = EmitAtomic32;
 inline constexpr auto EmitSharedAtomicAnd32     = EmitAtomic32;
 inline constexpr auto EmitSharedAtomicOr32      = EmitAtomic32;
 inline constexpr auto EmitSharedAtomicXor32     = EmitAtomic32;
+inline constexpr auto EmitSharedAtomicIAdd64    = EmitAtomic64;
+inline constexpr auto EmitSharedAtomicOr64      = EmitAtomic64;
 inline constexpr auto EmitDataAppend            = EmitAppendConsume;
 inline constexpr auto EmitDataConsume           = EmitAppendConsume;
 uint32_t              EmitSwizzleU32(ValueEmitContext& ctx, const IR::Inst& inst);

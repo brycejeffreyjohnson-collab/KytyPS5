@@ -625,6 +625,7 @@ static void ShaderGetStaticInputInfoCS(const HW::ComputeShaderInfo& regs,
                                        const HW::ShaderRegisters& /*sh*/,
                                        const ShaderMappedData& data, ShaderComputeInputInfo& info) {
 	const bool dispatch_thread_dimensions = info.dispatch_thread_dimensions;
+	const bool needs_lds_barriers          = info.needs_lds_barriers;
 	const auto host_subgroup_size         = info.host_subgroup_size;
 	info                                  = {};
 	info.dispatch_thread_dimensions       = dispatch_thread_dimensions;
